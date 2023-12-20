@@ -1,0 +1,129 @@
+---
+name: Build images
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        default: ".*"
+        type: string
+      tag:
+        default: ".*"
+        type: string
+      dockerfile:
+        default: ".*"
+        type: string
+      refresh:
+        type: boolean
+        default: false
+      push:
+        type: boolean
+        default: true
+  workflow_dispatch:
+    inputs:
+      image:
+        description: image (regex)
+        type: string
+        default: ".*"
+      tag:
+        description: tag (regex)
+        type: string
+        default: ".*"
+      dockerfile:
+        description: dockerfile (regex)
+        type: string
+        default: ".*"
+      refresh:
+        description: build even if base unchanged
+        type: boolean
+        default: false
+      push:
+        description: push to registry
+        type: boolean
+        default: true
+
+env:
+  REGISTRY: ghcr.io
+  REGISTRY_USERNAME: ${{ github.actor }}
+  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+  REPOSITORY: h0tw1r3/litmusimage
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Create matrix from json
+        id: set-matrix
+        run: |
+          image="${{ inputs.image }}"
+          tag="${{ inputs.tag }}"
+          dockerfile="${{ inputs.dockerfile }}"
+          matrix=$(jq --arg image "^${image}\$" --arg tag "^${tag}\$" --arg dockerfile "^${dockerfile}\$" 'map( . | select((.image? | match($image)) and (.tag? | match($tag)) and (.dockerfile? | match($dockerfile))))' images.json)
+          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+          if [ "${matrix}" == "[]" ] ; then
+            echo "::error title::failed to build matrix, no images matched?"
+            exit 1
+          fi
+  image:
+    needs: select
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.select.outputs.matrix)}}
+    steps:
+      - name: Login to ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+      - name: Set environment variables
+        run: |
+          PULL_IMAGE=${{ matrix.base_image }}:${{ matrix.base_tag }}
+          IMAGE_TAG=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.tag }}
+          echo "PULL_IMAGE=${PULL_IMAGE}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+      - name: Pull image ${{ matrix.base_image }}:${{ matrix.base_tag }}
+        run: |
+          docker pull ${PULL_IMAGE}
+          BASE_ID=$(docker images -q ${PULL_IMAGE})
+          echo "BASE_ID=${BASE_ID}" >> $GITHUB_ENV
+      - name: Pull and compare image ${{ matrix.image }}:${{ matrix.tag }}
+        id: compare_image
+        if: ${{ ! (inputs.refresh == true || inputs.refresh == 'true') }}
+        run: |
+          if docker pull $IMAGE_TAG ; then
+            IMAGE_BASE_ID=$(docker inspect ${IMAGE_TAG} --format "{{ index .Config.Labels \"base_image\"}}" || true)
+            if [[ "${IMAGE_BASE_ID}" == "${BASE_ID}" ]] ; then
+              echo "no updates to base image since last build, aborting"
+              exit 0
+            fi
+            echo "::notice title=::building docker image, base image id does not match"
+          else
+            echo "::notice title=::building docker image, litmusimage not found"
+          fi
+          echo "image_refresh=true" >> $GITHUB_OUTPUT
+      - name: Checkout repository
+        id: checkout_repo
+        if: steps.compare_image.outputs.image_refresh || steps.compare_image.outcome == 'skipped'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Build ${{ matrix.image }}:${{ matrix.tag }}
+        id: build_image
+        if: steps.checkout_repo.conclusion == 'success'
+        run: |
+          docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
+      - name: Push ${{ matrix.image }}:${{ matrix.tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+        if: steps.build_image.conclusion == 'success' && (inputs.push == true || inputs.push == 'true')
+        run: |
+          docker push $IMAGE_TAG
