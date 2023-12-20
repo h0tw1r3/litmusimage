@@ -2,9 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [ h0tw1r3 ]
   push:
-    branches: [ h0tw1r3 ]
 
 jobs:
   prepare:
