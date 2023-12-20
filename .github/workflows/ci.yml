@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI
 
 on:
   pull_request:
@@ -18,16 +18,24 @@ jobs:
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v40
+        with:
+          json: true
+          quotepath: false
       - name: Create build inputs
+        shell: python {0}
         run: |
-          for file in ${{ steps.changed-files.outputs.all_changed_files }} ; do
-            case "${file}" in
-              images.json)
-                echo "images.json ${file}" ;;
-              *.dockerfile)
-                echo "dockerfile ${file}" ;;
-            esac
-          done
+          import json
+          fromj = json.loads("${{ steps.changed-files.outputs.all_changed_files }}")
+          toj = json.dumps(fromj, indent=4)
+          print(toj)
+
+          import pip
+
+          from pip._internal.operations.freeze import freeze
+          for line in freeze():
+            print(line.split('=='))
+
+
 
 #  build:
 #    needs: prepare
