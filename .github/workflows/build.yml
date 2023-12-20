@@ -53,8 +53,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-      # only push images if workflow is running on the default branch
-      push: ${{ github.ref_name == github.event.repository.default_branch && (inputs.push == true || inputs.push == 'true') }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -74,6 +72,7 @@ jobs:
           fi
   image:
     needs: select
+    timeout-minutes: 5
     permissions:
       contents: read
       packages: write
@@ -88,15 +87,18 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ env.REGISTRY_USERNAME }}
           password: ${{ env.REGISTRY_PASSWORD }}
+
       - name: Set variables
         run: |
           echo "IMAGE_TAG=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.tag }}" >> $GITHUB_ENV
           echo "PULL_IMAGE=${{ matrix.base_image }}:${{ matrix.base_tag }}" >> $GITHUB_ENV
+
       - name: Pull image ${{ matrix.base_image }}:${{ matrix.base_tag }}
         run: |
           docker pull ${PULL_IMAGE}
           echo "BASE_ID=$(docker images -q ${PULL_IMAGE})" >> $GITHUB_ENV
-      - if: ${{ ! (inputs.refresh == true || inputs.refresh == 'true') }}
+
+      - if: inputs.refresh == false
         name: Pull and compare image ${{ matrix.image }}:${{ matrix.tag }}
         id: compare_image
         run: |
@@ -110,19 +112,27 @@ jobs:
           else
             echo "::notice title=::building docker image, litmusimage not found"
           fi
-          echo "image_refresh=true" >> $GITHUB_OUTPUT
-      - if: steps.compare_image.outputs.image_refresh || steps.compare_image.outcome == 'skipped'
+          echo "need_refresh=true" >> $GITHUB_OUTPUT
+
+      - if: steps.compare_image.outputs.need_refresh || steps.compare_image.outcome == 'skipped'
         name: Checkout repository
         id: checkout_repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
       - if: steps.checkout_repo.conclusion == 'success'
         name: Build ${{ matrix.image }}:${{ matrix.tag }}
         id: build_image
         run: |
           docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
-      - if: steps.build_image.conclusion == 'success' && needs.select.outputs.push
+
+      - if: steps.build_image.conclusion == 'success' && inputs.push
+        name: Get branch names
+        id: branch-names
+        uses: tj-actions/branch-names@v8
+
+      - if: steps.branch-names.outputs.is_default == 'true'
         name: Push ${{ matrix.image }}:${{ matrix.tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
           docker push $IMAGE_TAG
