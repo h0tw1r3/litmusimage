@@ -10,6 +10,11 @@ jobs:
   prepare:
     name: prepare
     runs-on: ubuntu-latest
+    outputs:
+      re_image: ${{ steps.create-inputs.outputs.re_image }}
+      re_tag: ${{ steps.create-inputs.outputs.re_tag }}
+      re_dockerfile: ${{ steps.create-inputs.outputs.re_dockerfile }}
+      do_build: ${{ steps.create-inputs.outputs.do_build }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,25 +26,38 @@ jobs:
         with:
           json: true
           quotepath: false
-      - name: Create build inputs
+      - name: Create inputs
+        id: create-inputs
         shell: python {0}
         run: |
           import json
-          fromj = json.loads("${{ steps.changed-files.outputs.all_changed_files }}")
-          toj = json.dumps(fromj, indent=4)
-          print(toj)
+          import os
+          import re
 
-          import pip
+          re_image = re_tag = re_dockerfile = '.*'
+          changed_files = json.loads("${{ steps.changed-files.outputs.all_changed_files }}")
+          with open('images.json') as fd:
+            builds = json.load(fd)
 
-          from pip._internal.operations.freeze import freeze
-          for line in freeze():
-            print(line.split('=='))
+          dockerfiles = list(map(lambda v: v.removesuffix('.dockerfile'), filter(lambda v: re.match('.*dockerfile$', v), changed_files)))
+          if len(dockerfiles) > 0:
+            re_dockerfile = '(' + '|'.join(dockerfiles) + ')'
 
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+            if re_dockerfile == re_image == re_tag:
+              print('do_build=false', file=output)
+            else:
+              print('do_build=true', file=output)
+              print(f're_dockerfile={re_dockerfile}', file=output)
+              print(f're_image={re_image}', file=output)
+              print(f're_tag={re_tag}', file=output)
 
-
-#  build:
-#    needs: prepare
-#    uses: ./.github/workflows/build.yml
-#    with:
-#      refresh: false
-#    secrets: inherit
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.do_build
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      image: ${{ needs.prepare.outputs.re_image }}
+      tag: ${{ needs.prepare.outputs.re_tag }}
+      dockerfile: ${{ needs.prepare.outputs.re_dockerfile }}
