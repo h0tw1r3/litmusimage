@@ -34,11 +34,11 @@ on:
         type: string
         default: ".*"
       refresh:
-        description: build even if base unchanged
+        description: build even if base image unchanged
         type: boolean
         default: false
       push:
-        description: push to registry
+        description: push to registry (default branch only)
         type: boolean
         default: true
 
@@ -53,11 +53,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      push: ${{ steps.branch-names.outputs.is_default }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
       - name: Create matrix from json
         id: set-matrix
         run: |
@@ -70,6 +72,12 @@ jobs:
             echo "::error title::failed to build matrix, no images matched?"
             exit 1
           fi
+
+      - if: inputs.push
+        name: Get branch names
+        id: branch-names
+        uses: tj-actions/branch-names@v8
+
   image:
     needs: select
     timeout-minutes: 5
@@ -127,12 +135,7 @@ jobs:
         run: |
           docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
 
-      - if: steps.build_image.conclusion == 'success' && inputs.push
-        name: Get branch names
-        id: branch-names
-        uses: tj-actions/branch-names@v8
-
-      - if: steps.branch-names.outputs.is_default == 'true'
+      - if: needs.select.output.push == 'true'
         name: Push ${{ matrix.image }}:${{ matrix.tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
           docker push $IMAGE_TAG
