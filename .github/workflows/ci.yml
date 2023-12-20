@@ -46,6 +46,7 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
             if re_dockerfile == re_image == re_tag:
               print('do_build=false', file=output)
+              print('::notice title=::found no image related changes')
             else:
               print('do_build=true', file=output)
               print(f're_dockerfile={re_dockerfile}', file=output)
@@ -54,10 +55,11 @@ jobs:
 
   build:
     needs: prepare
-    if: needs.prepare.outputs.do_build
+    if: needs.prepare.outputs.do_build == 'true'
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
       image: ${{ needs.prepare.outputs.re_image }}
       tag: ${{ needs.prepare.outputs.re_tag }}
       dockerfile: ${{ needs.prepare.outputs.re_dockerfile }}
+      refresh: true
