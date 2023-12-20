@@ -70,7 +70,7 @@ jobs:
           image="${{ inputs.image }}"
           tag="${{ inputs.tag }}"
           dockerfile="${{ inputs.dockerfile }}"
-          matrix=$(jq --arg image "^${image}\$" --arg tag "^${tag}\$" --arg dockerfile "^${dockerfile}\$" 'map( . | select((.image? | match($image)) and (.tag? | match($tag)) and (.dockerfile? | match($dockerfile))))' images.json)
+          matrix=$(jq --arg image "^${image}\$" --arg tag "^${tag}\$" --arg dockerfile "^${dockerfile}\$" 'map( . | select(((.image? | match($image)) and (.tag? | match($tag))) or (.dockerfile? | match($dockerfile))))' images.json)
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
           if [ "${matrix}" == "[]" ] ; then
             echo "::error title::failed to build matrix, no images matched?"
