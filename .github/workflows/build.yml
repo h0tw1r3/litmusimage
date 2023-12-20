@@ -53,6 +53,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      # only push images if workflow is running on the default branch
+      push: ${{ github.ref_name == github.event.repository.default_branch && (inputs.push == true || inputs.push == 'true') }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -86,20 +88,17 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ env.REGISTRY_USERNAME }}
           password: ${{ env.REGISTRY_PASSWORD }}
-      - name: Set environment variables
+      - name: Set variables
         run: |
-          PULL_IMAGE=${{ matrix.base_image }}:${{ matrix.base_tag }}
-          IMAGE_TAG=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.tag }}
-          echo "PULL_IMAGE=${PULL_IMAGE}" >> $GITHUB_ENV
-          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.tag }}" >> $GITHUB_ENV
+          echo "PULL_IMAGE=${{ matrix.base_image }}:${{ matrix.base_tag }}" >> $GITHUB_ENV
       - name: Pull image ${{ matrix.base_image }}:${{ matrix.base_tag }}
         run: |
           docker pull ${PULL_IMAGE}
-          BASE_ID=$(docker images -q ${PULL_IMAGE})
-          echo "BASE_ID=${BASE_ID}" >> $GITHUB_ENV
-      - name: Pull and compare image ${{ matrix.image }}:${{ matrix.tag }}
+          echo "BASE_ID=$(docker images -q ${PULL_IMAGE})" >> $GITHUB_ENV
+      - if: ${{ ! (inputs.refresh == true || inputs.refresh == 'true') }}
+        name: Pull and compare image ${{ matrix.image }}:${{ matrix.tag }}
         id: compare_image
-        if: ${{ ! (inputs.refresh == true || inputs.refresh == 'true') }}
         run: |
           if docker pull $IMAGE_TAG ; then
             IMAGE_BASE_ID=$(docker inspect ${IMAGE_TAG} --format "{{ index .Config.Labels \"base_image\"}}" || true)
@@ -112,18 +111,18 @@ jobs:
             echo "::notice title=::building docker image, litmusimage not found"
           fi
           echo "image_refresh=true" >> $GITHUB_OUTPUT
-      - name: Checkout repository
+      - if: steps.compare_image.outputs.image_refresh || steps.compare_image.outcome == 'skipped'
+        name: Checkout repository
         id: checkout_repo
-        if: steps.compare_image.outputs.image_refresh || steps.compare_image.outcome == 'skipped'
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - name: Build ${{ matrix.image }}:${{ matrix.tag }}
+      - if: steps.checkout_repo.conclusion == 'success'
+        name: Build ${{ matrix.image }}:${{ matrix.tag }}
         id: build_image
-        if: steps.checkout_repo.conclusion == 'success'
         run: |
           docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
-      - name: Push ${{ matrix.image }}:${{ matrix.tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
-        if: steps.build_image.conclusion == 'success' && (inputs.push == true || inputs.push == 'true')
+      - if: steps.build_image.conclusion == 'success' && needs.select.outputs.push
+        name: Push ${{ matrix.image }}:${{ matrix.tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
           docker push $IMAGE_TAG
