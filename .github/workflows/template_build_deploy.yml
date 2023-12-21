@@ -22,10 +22,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGISTRY: ghcr.io
-  REGISTRY_USERNAME: ${{ github.actor }}
-  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-  REPOSITORY: h0tw1r3/litmusimage
+  REGISTRY: ${{ vars.DOCKER_REGISTRY != '' && vars.DOCKER_REGISTRY || 'ghcr.io' }}
+  REGISTRY_USERNAME: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_USERNAME || github.actor }}
+  REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD != '' && secrets.DOCKER_PASSWORD || secrets.GITHUB_TOKEN }}
+  REPOSITORY: ${{ vars.DOCKER_REPOSITORY != '' && vars.DOCKER_REPOSITORY || github.repository }}
 
 jobs:
   select:
@@ -106,7 +106,8 @@ jobs:
       fail-fast: false
       matrix: ${{fromJson(needs.select.outputs.matrix)}}
     steps:
-      - name: Login to ${{ env.REGISTRY }}
+      - if: needs.select.outputs.push == 'true'
+        name: Login to ${{ env.REGISTRY }}
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
