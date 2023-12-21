@@ -32,7 +32,7 @@ jobs:
           import os
           import re
 
-          re_image = re_tag = re_dockerfile = '.*'
+          re_image = re_tag = re_dockerfile = ''
           changed_files = json.loads("${{ steps.changed-files.outputs.all_changed_files }}")
           with open('images.json') as fd:
             builds = json.load(fd)
