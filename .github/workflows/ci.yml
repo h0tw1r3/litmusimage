@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       re_image: ${{ steps.create-inputs.outputs.re_image }}
-      re_tag: ${{ steps.create-inputs.outputs.re_tag }}
       re_dockerfile: ${{ steps.create-inputs.outputs.re_dockerfile }}
       do_build: ${{ steps.create-inputs.outputs.do_build }}
     steps:
@@ -32,7 +31,7 @@ jobs:
           import os
           import re
 
-          re_image = re_tag = re_dockerfile = ''
+          re_image = re_dockerfile = ''
           changed_files = json.loads("${{ steps.changed-files.outputs.all_changed_files }}")
           with open('images.json') as fd:
             builds = json.load(fd)
@@ -42,14 +41,13 @@ jobs:
             re_dockerfile = '(' + '|'.join(dockerfiles) + ')'
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-            if re_dockerfile == re_image == re_tag:
+            if re_dockerfile == re_image:
               print('do_build=false', file=output)
               print('::notice title=::found no image related changes')
             else:
               print('do_build=true', file=output)
               print(f're_dockerfile={re_dockerfile}', file=output)
               print(f're_image={re_image}', file=output)
-              print(f're_tag={re_tag}', file=output)
 
   build:
     needs: prepare
@@ -58,6 +56,5 @@ jobs:
     secrets: inherit
     with:
       image: ${{ needs.prepare.outputs.re_image }}
-      tag: ${{ needs.prepare.outputs.re_tag }}
       dockerfile: ${{ needs.prepare.outputs.re_dockerfile }}
       refresh: true

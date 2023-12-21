@@ -7,9 +7,6 @@ on:
       image:
         default: ""
         type: string
-      tag:
-        default: ""
-        type: string
       dockerfile:
         default: ""
         type: string
@@ -52,7 +49,6 @@ jobs:
           
           # parse workflow inputs
           image = "${{ inputs.image }}"
-          tag = "${{ inputs.tag }}"
           dockerfile = "${{ inputs.dockerfile }}"
           refresh = True if "${{ inputs.refresh }}" == "true" else False
           
@@ -64,6 +60,7 @@ jobs:
               builds = json.load(fd)
               for i, v in enumerate(builds):
                   builds[i]['image_tag'] = f"{v['image']}:{v['tag']}"
+                  builds[i]['base_image_tag'] = f"{v['base_image']}:{v['base_tag']}"
                   builds[i]['refresh'] = refresh
           
           if dockerfile:
@@ -74,11 +71,10 @@ jobs:
                       v['refresh'] = True
                       matrix.append(v)
           
-          if image or tag:
+          if image:
               image = f"^{image}$" if image else image
-              tag = f"^{tag}$" if tag else tag
               for _, v in enumerate(builds):
-                  if match(image, v['image']) and match(tag, v['tag']):
+                  if match(image, v['image_tag']):
                       matrix.append(v)
           
           # unique list of images
@@ -117,16 +113,16 @@ jobs:
 
       - name: Set variables
         run: |
-          echo "IMAGE_TAG=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.tag }}" >> $GITHUB_ENV
-          echo "PULL_IMAGE=${{ matrix.base_image }}:${{ matrix.base_tag }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.base_image_tag }}" >> $GITHUB_ENV
+          echo "PULL_IMAGE=${{ matrix.base_image_tag }}" >> $GITHUB_ENV
 
-      - name: Pull image ${{ matrix.base_image }}:${{ matrix.base_tag }}
+      - name: Pull image ${{ matrix.base_image_tag }}
         run: |
           docker pull ${PULL_IMAGE}
           echo "BASE_ID=$(docker images -q ${PULL_IMAGE})" >> $GITHUB_ENV
 
       - if: matrix.refresh == false
-        name: Pull and compare image ${{ matrix.image }}:${{ matrix.tag }}
+        name: Pull and compare image ${{ matrix.image_tag }}
         id: compare_image
         run: |
           if docker pull $IMAGE_TAG ; then
@@ -149,12 +145,12 @@ jobs:
           fetch-depth: 1
 
       - if: steps.checkout_repo.conclusion == 'success'
-        name: Build ${{ matrix.image }}:${{ matrix.tag }}
+        name: Build ${{ matrix.image_tag }}
         id: build_image
         run: |
           docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
 
       - if: needs.select.output.push == 'true'
-        name: Push ${{ matrix.image }}:${{ matrix.tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+        name: Push ${{ matrix.image_tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
           docker push $IMAGE_TAG

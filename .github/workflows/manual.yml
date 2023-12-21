@@ -3,7 +3,6 @@ name: Manual
 run-name: >
   Build
   ${{ inputs.image && format('image={0}', inputs.image) || '' }}
-  ${{ inputs.tag && format('tag={0}', inputs.tag) || '' }}
   ${{ inputs.dockerfile && format('dockerfile={0}', inputs.dockerfile) || '' }}
   ${{ inputs.refresh && format('refresh={0}', inputs.refresh) || '' }}
   ${{ inputs.push && format('push={0}', inputs.push) || ''}}
@@ -12,13 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       image:
-        description: image (regex)
+        description: image:tag (regex)
         type: string
         default: ".*"
-      tag:
-        description: and tag (regex)
-        type: string
-        default: ""
       dockerfile:
         description: or dockerfile (regex)
         type: string
@@ -38,7 +33,6 @@ jobs:
     secrets: inherit
     with:
       image: ${{ inputs.image }}
-      tag: ${{ inputs.tag }}
       dockerfile: ${{ inputs.dockerfile }}
       refresh: ${{ inputs.refresh == true }}
       push: ${{ inputs.push == true }}
