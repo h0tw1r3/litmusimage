@@ -5,7 +5,7 @@ This repository creates docker image files for testing puppet modules with
 
 The images have initd, systemd or upstart, along with SSH.
 
-Images are uploaded to [Docker Hub][2] automatically and are rebuilt [nightly if
+Images get uploaded to [Docker Hub][2] automatically and are rebuilt [nightly if
 necessary][3].
 
 ## Buildable images
