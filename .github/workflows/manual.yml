@@ -1,0 +1,37 @@
+---
+name: Manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: image (regex)
+        type: string
+        default: ""
+      tag:
+        description: and tag (regex)
+        type: string
+        default: ""
+      dockerfile:
+        description: or dockerfile (regex)
+        type: string
+        default: ""
+      refresh:
+        description: build even if base image unchanged
+        type: boolean
+        default: false
+      push:
+        description: push to registry (default branch only)
+        type: boolean
+        default: true
+
+jobs:
+  trigger:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      image: ${{ inputs.image }}
+      tag: ${{ inputs.tag }}
+      dockerfile: ${{ inputs.dockerfile }}
+      refresh: ${{ inputs.refresh == true }}
+      push: ${{ inputs.push == true }}

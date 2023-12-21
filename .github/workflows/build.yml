@@ -1,44 +1,22 @@
 ---
-name: Build images
+name: Build and deploy
 
 on:
   workflow_call:
     inputs:
       image:
-        default: ".*"
+        default: ""
         type: string
       tag:
-        default: ".*"
+        default: ""
         type: string
       dockerfile:
-        default: ".*"
+        default: ""
         type: string
       refresh:
         type: boolean
         default: false
       push:
-        type: boolean
-        default: true
-  workflow_dispatch:
-    inputs:
-      image:
-        description: image (regex)
-        type: string
-        default: ""
-      tag:
-        description: and tag (regex)
-        type: string
-        default: ""
-      dockerfile:
-        description: or dockerfile (regex)
-        type: string
-        default: ""
-      refresh:
-        description: build even if base image unchanged
-        type: boolean
-        default: false
-      push:
-        description: push to registry (default branch only)
         type: boolean
         default: true
 
