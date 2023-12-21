@@ -93,7 +93,7 @@ jobs:
         id: branch-names
         uses: tj-actions/branch-names@v8
 
-  image:
+  images:
     needs: select
     name: image (${{ matrix.image_tag }})
     timeout-minutes: 5
