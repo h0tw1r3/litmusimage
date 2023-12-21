@@ -95,6 +95,7 @@ jobs:
 
   image:
     needs: select
+    name: image (${{ matrix.image_tag }})
     timeout-minutes: 5
     permissions:
       contents: read
