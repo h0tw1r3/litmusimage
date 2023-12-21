@@ -29,7 +29,7 @@ on:
 
 jobs:
   manual:
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/template_build_deploy.yml
     secrets: inherit
     with:
       image: ${{ inputs.image }}

@@ -6,7 +6,7 @@ on:
 
 jobs:
   update-images:
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/template_build_deploy.yml
     with:
       image: .*
     secrets: inherit

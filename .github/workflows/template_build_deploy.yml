@@ -1,5 +1,5 @@
 ---
-name: Build and deploy
+name: template - build and deploy
 
 on:
   workflow_call:
