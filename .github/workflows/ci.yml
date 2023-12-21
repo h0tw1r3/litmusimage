@@ -56,7 +56,7 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
             if re_dockerfile == re_image:
               print('do_build=false', file=output)
-              print('::notice title=::found no image related changes')
+              print('::notice title=::no image build changes detected')
             else:
               print('do_build=true', file=output)
               print(f're_dockerfile=({re_dockerfile})', file=output)
