@@ -1,5 +1,12 @@
 ---
 name: Manual
+run-name: >
+  Build
+  ${{ inputs.image && format('image={0}', inputs.image) || '' }}
+  ${{ inputs.tag && format('tag={0}', inputs.tag) || '' }}
+  ${{ inputs.dockerfile && format('dockerfile={0}', inputs.dockerfile) || '' }}
+  ${{ inputs.refresh && format('refresh={0}', inputs.refresh) || '' }}
+  ${{ inputs.push && format('push={0}', inputs.push) || ''}}
 
 on:
   workflow_dispatch:
@@ -7,7 +14,7 @@ on:
       image:
         description: image (regex)
         type: string
-        default: ""
+        default: ".*"
       tag:
         description: and tag (regex)
         type: string
