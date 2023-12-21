@@ -4,9 +4,13 @@ on:
   pull_request:
   push:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: true
+
 jobs:
   prepare:
-    name: prepare
+    name: prepare ${{ github.sha }}
     runs-on: ubuntu-latest
     outputs:
       re_image: ${{ steps.create-inputs.outputs.re_image }}
