@@ -54,7 +54,6 @@ env:
 
 jobs:
   select:
-    name: Select ${{ github.sha }}
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}

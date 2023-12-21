@@ -7,7 +7,6 @@ on:
 
 jobs:
   prepare:
-    name: prepare ${{ github.event.pull_request.head.ref }}${{ github.event.push.ref }}
     runs-on: ubuntu-latest
     outputs:
       re_image: ${{ steps.create-inputs.outputs.re_image }}
