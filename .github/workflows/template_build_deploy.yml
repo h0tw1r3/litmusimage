@@ -116,7 +116,7 @@ jobs:
 
       - name: Set variables
         run: |
-          echo "IMAGE_TAG=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.base_image_tag }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image_tag }}" >> $GITHUB_ENV
           echo "PULL_IMAGE=${{ matrix.base_image_tag }}" >> $GITHUB_ENV
 
       - name: Pull image ${{ matrix.base_image_tag }}
