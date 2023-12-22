@@ -153,7 +153,7 @@ jobs:
         run: |
           docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
 
-      - if: needs.select.outputs.push == 'true'
+      - if: steps.build_image.conclusion == 'success'  && needs.select.outputs.push == 'true'
         name: Push ${{ matrix.image_tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
           docker image push $IMAGE_TAG
