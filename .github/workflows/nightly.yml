@@ -5,7 +5,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  update-images:
+  build:
     uses: ./.github/workflows/template_build_deploy.yml
     with:
       image: .*
