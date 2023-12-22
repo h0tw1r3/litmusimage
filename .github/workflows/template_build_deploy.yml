@@ -121,7 +121,7 @@ jobs:
 
       - name: Pull image ${{ matrix.base_image_tag }}
         run: |
-          docker pull ${PULL_IMAGE}
+          docker image pull ${PULL_IMAGE}
           echo "BASE_ID=$(docker images -q ${PULL_IMAGE})" >> $GITHUB_ENV
 
       - if: matrix.refresh == false
@@ -156,4 +156,4 @@ jobs:
       - if: needs.select.outputs.push == 'true'
         name: Push ${{ matrix.image_tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
-          docker push $IMAGE_TAG
+          docker image push $IMAGE_TAG
