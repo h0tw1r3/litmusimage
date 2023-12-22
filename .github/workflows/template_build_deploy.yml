@@ -134,9 +134,9 @@ jobs:
               echo "no updates to base image since last build, aborting"
               exit 0
             fi
-            echo "::notice title=::building docker image, base image id does not match"
+            echo "::notice title=::rebuilding, base image_id does not match"
           else
-            echo "::notice title=::building docker image, litmusimage not found"
+            echo "::notice title=::building, image not found in registry"
           fi
           echo "need_refresh=true" >> $GITHUB_OUTPUT
 
