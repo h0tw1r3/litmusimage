@@ -1,5 +1,9 @@
 # litmusimage
 
+[![Nightly][nightly-badge]][nightly-workflow]
+[![CI/CD][ci-badge]][ci-workflow]
+[![License][license-badge]](LICENSE)
+
 This repository creates docker image files for testing puppet modules with
 [Puppet Litmus][1].
 
@@ -118,7 +122,12 @@ docker rmi $(docker images -q)
   take care of correctly basing on base image)
 * Introduce variants with puppet agent pre-installed for `litmus:install_agent`
 
-[1]: https://github.com/puppetlabs/puppetlitmus
-[2]: https://hub.docker.com/u/litmusimage
-[3]: https://github.com/puppetlabs/litmusimage/blob/main/.github/workflows/nightly.yml
-[4]: https://github.com/puppetlabs/litmusimage/tree/main/images.json
+[1]: https://github.com/h0tw1r3/puppetlitmus
+[2]: https://github.com/h0tw1r3?ecosystem=container&tab=packages&tab=packages&ecosystem=container&q=litmusimage
+[3]: https://github.com/h0tw1r3/litmusimage/blob/main/.github/workflows/nightly.yml
+[4]: https://github.com/h0tw1r3/litmusimage/tree/main/images.json
+[nightly-badge]: https://github.com/h0tw1r3/litmusimage/actions/workflows/nightly.yml/badge.svg
+[nightly-workflow]: https://github.com/h0tw1r3/litmusimage/actions/workflows/nightly.yml
+[ci-badge]: https://github.com/h0tw1r3/litmusimage/actions/workflows/ci.yml/badge.svg
+[ci-workflow]: https://github.com/h0tw1r3/litmusimage/actions/workflows/ci.yml
+[license-badge]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
