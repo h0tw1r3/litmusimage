@@ -118,14 +118,33 @@ docker rmi $(docker images -q)
 
 ## Future improvements
 
-* Optimize building by using fewer layers or using multi-stage builds (needs to
-  take care of correctly basing on base image)
 * Introduce variants with puppet agent pre-installed for `litmus:install_agent`
+
+## Repository
+
+This project supports continuous integration with [Github Actions] workflows.
+Repository actions are configured by default to build and deploy container
+images to your [Github packages] project repository.
+
+To configure a registry such as [docker.io], create these Action secrets and
+variables:
+
+| variable            | value              | type   |
+| ------------------- | ------------------ | ------ |
+| `DOCKER_USERNAME`   | _your login_       |        |
+| `DOCKER_PASSWORD`   | _read/write token_ | secret |
+| `DOCKER_REGISTRY`   | `docker.io`        |        |
+| `DOCKER_REPOSITORY` | _your login_       |        |
 
 [1]: https://github.com/h0tw1r3/puppetlitmus
 [2]: https://github.com/h0tw1r3?ecosystem=container&tab=packages&tab=packages&ecosystem=container&q=litmusimage
 [3]: https://github.com/h0tw1r3/litmusimage/blob/main/.github/workflows/nightly.yml
 [4]: https://github.com/h0tw1r3/litmusimage/tree/main/images.json
+
+[Github Packages]: https://ghcr.io
+[Github Actions]: https://docs.github.com/en/actions
+[docker.io]: https://docker.io
+
 [nightly-badge]: https://github.com/h0tw1r3/litmusimage/actions/workflows/nightly.yml/badge.svg
 [nightly-workflow]: https://github.com/h0tw1r3/litmusimage/actions/workflows/nightly.yml
 [ci-badge]: https://github.com/h0tw1r3/litmusimage/actions/workflows/ci.yml/badge.svg
