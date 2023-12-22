@@ -9,8 +9,7 @@ This repository creates docker image files for testing puppet modules with
 
 The images have initd, systemd or upstart, along with SSH.
 
-Images get uploaded to [Docker Hub][2] automatically and are rebuilt [nightly if
-necessary][3].
+Images get [uploaded automatically][2] and are rebuilt [nightly if necessary][3].
 
 ## Buildable images
 
@@ -120,29 +119,27 @@ docker rmi $(docker images -q)
 
 * Introduce variants with puppet agent pre-installed for `litmus:install_agent`
 
-## Repository notes
+## Custom images
 
-Continuous integration and delivery is handled by [Github Actions][5].
-Repository actions are configured by default to build and deploy container
-images to your [Github packages][6] project repository.
+Building and deploying custom images can be done by forking this repository and
+enabling Actions. Once enabled images will be pushed to your public [ghcr.io][5]
+registry by default. To push images to another package registry, set following
+Action [secrets][6] and [variables][7]:
 
-To configure a registry such as [docker.io][7], create these Action secrets and
-variables:
-
-| Name                | Value              | Type       |
-| ------------------- | ------------------ | ---------- |
-| `DOCKER_USERNAME`   | _your login_       |            |
-| `DOCKER_PASSWORD`   | _read/write token_ | **secret** |
-| `DOCKER_REGISTRY`   | `docker.io`        |            |
-| `DOCKER_REPOSITORY` | _your login_       |            |
+| name                | type   |
+| ------------------- | ------ |
+| `DOCKER_USERNAME`   |        |
+| `DOCKER_PASSWORD`   | secret |
+| `DOCKER_REGISTRY`   |        |
+| `DOCKER_REPOSITORY` |        |
 
 [1]: https://github.com/h0tw1r3/puppetlitmus
 [2]: https://github.com/h0tw1r3?ecosystem=container&tab=packages&tab=packages&ecosystem=container&q=litmusimage
 [3]: https://github.com/h0tw1r3/litmusimage/blob/main/.github/workflows/nightly.yml
 [4]: https://github.com/h0tw1r3/litmusimage/tree/main/images.json
-[5]: https://github.com/h0tw1r3/litmusimage/actions
-[6]: https://ghcr.io
-[7]: https://docker.io
+[5]: https://ghcr.io
+[6]: https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions
+[7]: https://docs.github.com/en/actions/learn-github-actions/variables
 
 [nightly-badge]: https://github.com/h0tw1r3/litmusimage/actions/workflows/nightly.yml/badge.svg
 [nightly-workflow]: https://github.com/h0tw1r3/litmusimage/actions/workflows/nightly.yml
