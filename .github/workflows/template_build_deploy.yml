@@ -23,7 +23,7 @@ concurrency:
 
 env:
   REGISTRY: ${{ vars.DOCKER_REGISTRY != '' && vars.DOCKER_REGISTRY || 'ghcr.io' }}
-  REGISTRY_USERNAME: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_USERNAME || github.actor }}
+  REGISTRY_USERNAME: ${{ vars.DOCKER_USERNAME != '' && vars.DOCKER_USERNAME || github.actor }}
   REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD != '' && secrets.DOCKER_PASSWORD || secrets.GITHUB_TOKEN }}
   REPOSITORY: ${{ vars.DOCKER_REPOSITORY != '' && vars.DOCKER_REPOSITORY || github.repository }}
 
