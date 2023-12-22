@@ -1,11 +1,11 @@
 name: CI/CD
 
 on:
-  pull_request_target:
+  pull_request:
     types: [ opened, synchronize ]
-    branches: [ main ]
+    branches: [ h0tw1r3 ]
   push:
-    branches: [ main ]
+    branches: [ h0tw1r3 ]
 
 jobs:
   prepare:
