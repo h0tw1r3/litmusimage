@@ -1,5 +1,5 @@
 ---
-name: template - build and deploy
+name: template - build, test and deploy
 
 on:
   workflow_call:
@@ -26,6 +26,7 @@ env:
   REGISTRY_USERNAME: ${{ vars.DOCKER_USERNAME != '' && vars.DOCKER_USERNAME || github.actor }}
   REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD != '' && secrets.DOCKER_PASSWORD || secrets.GITHUB_TOKEN }}
   REPOSITORY: ${{ vars.DOCKER_REPOSITORY != '' && vars.DOCKER_REPOSITORY || github.repository }}
+  BOLT_GEM: 1
 
 jobs:
   select:
@@ -153,7 +154,29 @@ jobs:
         run: |
           docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
 
-      - if: steps.build_image.conclusion == 'success'  && needs.select.outputs.push == 'true'
+      - if: steps.build_image.conclusion == 'success'
+        name: Test Build ${{ matrix.image_tag }}
+        id: test_image
+        uses: "ruby/setup-ruby@v1"
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: tests
+        run: |
+          echo ::group::bolt setup
+          bundle exec bolt module install
+          echo ::endgroup::
+          echo ::group::provision container
+          bundle exec rake litmus:provision[docker,${IMAGE_TAG}]
+          echo ::endgroup::
+          echo ::group::provision container with docker exp
+          bundle exec rake litmus:provision[docker_exp,${IMAGE_TAG}]
+          echo ::endgroup::
+          echo ::group::test container
+          bundle exec bolt command run 'uptime' -t all
+          echo ::endgroup::
+
+      - if: steps.test_image.conclusion == 'success'  && needs.select.outputs.push == 'true'
         name: Push ${{ matrix.image_tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
           docker image push $IMAGE_TAG
