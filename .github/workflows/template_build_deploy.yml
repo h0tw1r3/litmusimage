@@ -181,6 +181,15 @@ jobs:
           bundle exec bolt command run 'uptime' -t all
           echo ::endgroup::
 
+      - if: steps.test_image.conclusion != 'success'
+        name: Test failure logs
+        run: |
+          for x in `docker ps -a --format '{{.ID}}'` ; do
+            echo ::group::${x}
+            docker logs ${x}
+            echo ::endgroup::
+          done
+
       - if: steps.test_image.conclusion == 'success'  && needs.select.outputs.push == 'true'
         name: Push ${{ matrix.image_tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
