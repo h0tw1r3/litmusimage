@@ -34,6 +34,9 @@ Images get [uploaded automatically][2] and are rebuilt [nightly if necessary][3]
 | rockylinux      | 9       | yum_systemd        | rockylinux/rockylinux | 9 |
 | almalinux       | 8       | yum_systemd        | almalinux             | 8 |
 | almalinux       | 9       | yum_systemd        | almalinux             | 9 |
+| redhat          | 7       | yum_systemd        | registry.access.redhat.com/ubi7/ubi-init | latest   |
+| redhat          | 8       | yum_systemd        | redhat/ubi8-init                         | latest   |
+| redhat          | 9       | yum_systemd        | redhat/ubi9-init                         | latest   |
 | debian          | 10      | apt_sysvinit-utils | debian                | 10 |
 | debian          | 11      | apt_sysvinit-utils | debian                | bullseye |
 | debian          | 12      | apt_sysvinit-utils | debian                | 12 |
