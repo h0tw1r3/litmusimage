@@ -183,6 +183,9 @@ jobs:
       - if: steps.test_image.outcome != 'success'
         name: Test failure logs
         run: |
+          echo ::group::docker configs
+          cat /etc/docker/* || true
+          echo ::endgroup::
           for x in `docker ps -a --format '{{.ID}}'` ; do
             echo ::group::${x}
             docker logs ${x}
