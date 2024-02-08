@@ -101,7 +101,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       max-parallel: 10
       fail-fast: false
@@ -155,7 +155,7 @@ jobs:
           docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
 
       - if: steps.build_image.conclusion == 'success'
-        name: Setup ruby for test
+        name: Setup ruby for smoke test
         id: test_ruby_setup
         uses: "ruby/setup-ruby@v1"
         with:
@@ -171,11 +171,11 @@ jobs:
           echo ::group::bolt setup
           bundle exec bolt module install
           echo ::endgroup::
-          echo ::group::provision container
-          bundle exec rake litmus:provision[docker,${IMAGE_TAG}]
-          echo ::endgroup::
           echo ::group::provision container with docker exp
           bundle exec rake litmus:provision[docker_exp,${IMAGE_TAG}]
+          echo ::endgroup::
+          echo ::group::provision container
+          bundle exec rake litmus:provision[docker,${IMAGE_TAG}]
           echo ::endgroup::
           echo ::group::test container
           bundle exec bolt command run 'uptime' -t all
