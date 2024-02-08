@@ -173,9 +173,6 @@ jobs:
           echo ::group::provision container with docker exp
           bundle exec rake litmus:provision[docker_exp,${IMAGE_TAG}]
           echo ::endgroup::
-          echo ::group::provision container
-          bundle exec rake litmus:provision[docker,${IMAGE_TAG}]
-          echo ::endgroup::
           echo ::group::test container
           bundle exec bolt command run 'uptime' -t all
           echo ::endgroup::
@@ -191,6 +188,7 @@ jobs:
             docker logs ${x}
             echo ::endgroup::
           done
+          exit 1
 
       - if: steps.test_image.outcome == 'success' && needs.select.outputs.push == 'true'
         name: Push ${{ matrix.image_tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
