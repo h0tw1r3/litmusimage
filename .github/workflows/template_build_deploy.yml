@@ -155,13 +155,18 @@ jobs:
           docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
 
       - if: steps.build_image.conclusion == 'success'
-        name: Test Build ${{ matrix.image_tag }}
-        id: test_image
+        name: Setup ruby for test
+        id: test_ruby_setup
         uses: "ruby/setup-ruby@v1"
         with:
           ruby-version: '3.2'
           bundler-cache: true
           working-directory: tests
+
+      - if: steps.test_ruby_setup.conculsion == 'success'
+        name: Test image ${{ matrix.image_tag }}
+        id: test_image
+        working-directory: tests
         run: |
           echo ::group::bolt setup
           bundle exec bolt module install
