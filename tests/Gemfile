@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
-gem 'puppet_litmus'
-gem 'puppetlabs_spec_helper'
+gem 'puppet_litmus', git: 'https://github.com/h0tw1r3/puppet_litmus.git', branch: 'h0tw1r3'
+gem 'puppetlabs_spec_helper' #, git: 'https://github.com/h0tw1r3/puppetlabs_spec_helper.git', tag: 'h0tw1r3'
 gem 'rake'
 gem 'ed25519'
 gem 'bcrypt_pbkdf'
