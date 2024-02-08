@@ -154,8 +154,7 @@ jobs:
         run: |
           docker build --rm --no-cache -t ${IMAGE_TAG} . --label "base_image=${BASE_ID}" -f ${{ matrix.dockerfile }}.dockerfile --build-arg BASE_IMAGE_TAG=${{ matrix.base_tag }} --build-arg OS_TYPE=${{ matrix.base_image }}
 
-      - if: steps.build_image.conclusion == 'success'
-        name: Setup ruby for smoke test
+      - name: Setup ruby for smoke test
         id: test_ruby_setup
         uses: "ruby/setup-ruby@v1"
         with:
@@ -163,9 +162,9 @@ jobs:
           bundler-cache: true
           working-directory: tests
 
-      - if: steps.test_ruby_setup.conclusion == 'success'
-        name: Test image ${{ matrix.image_tag }}
+      - name: Test image ${{ matrix.image_tag }}
         id: test_image
+        continue-on-error: true
         working-directory: tests
         run: |
           echo ::group::bolt setup
@@ -181,7 +180,7 @@ jobs:
           bundle exec bolt command run 'uptime' -t all
           echo ::endgroup::
 
-      - if: steps.test_image.conclusion != 'success'
+      - if: steps.test_image.outcome != 'success'
         name: Test failure logs
         run: |
           for x in `docker ps -a --format '{{.ID}}'` ; do
@@ -190,7 +189,7 @@ jobs:
             echo ::endgroup::
           done
 
-      - if: steps.test_image.conclusion == 'success'  && needs.select.outputs.push == 'true'
+      - if: steps.test_image.outcome == 'success' && needs.select.outputs.push == 'true'
         name: Push ${{ matrix.image_tag }} to ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
         run: |
           docker image push $IMAGE_TAG
