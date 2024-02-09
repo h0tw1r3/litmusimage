@@ -66,10 +66,9 @@ jobs:
 
   build:
     needs: prepare
-    if: needs.prepare.outputs.do_build == 'true'
     uses: ./.github/workflows/template_build_deploy.yml
     secrets: inherit
     with:
-      image: ${{ needs.prepare.outputs.re_image }}
-      dockerfile: ${{ needs.prepare.outputs.re_dockerfile }}
+      image: ".*"
+      dockerfile: ".*"
       refresh: true
