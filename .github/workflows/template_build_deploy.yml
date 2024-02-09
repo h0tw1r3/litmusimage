@@ -166,16 +166,11 @@ jobs:
         id: test_image
         continue-on-error: true
         working-directory: tests
+        timeout-minutes: 1
         run: |
-          echo ::group::bolt setup
           bundle exec bolt module install
-          echo ::endgroup::
-          echo ::group::provision container with docker exp
           bundle exec rake litmus:provision[docker_exp,${IMAGE_TAG}]
-          echo ::endgroup::
-          echo ::group::test container
           bundle exec bolt command run 'uptime' -t all
-          echo ::endgroup::
 
       - if: steps.test_image.outcome != 'success'
         name: Test failure logs
