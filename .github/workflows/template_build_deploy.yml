@@ -170,7 +170,7 @@ jobs:
         run: |
           bundle exec bolt module install
           bundle exec rake litmus:provision[docker_exp,${IMAGE_TAG}]
-          bundle exec bolt command run 'uptime' -t all
+          bundle exec bolt command run 'last' -t all
 
       - if: steps.test_image.outcome != 'success'
         name: Test failure logs
