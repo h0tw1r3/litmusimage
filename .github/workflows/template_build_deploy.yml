@@ -160,24 +160,20 @@ jobs:
         with:
           ruby-version: '3.2'
           bundler-cache: true
-          working-directory: tests
+          working-directory: tests/smoke
 
       - name: Test image ${{ matrix.image_tag }}
         id: test_image
         continue-on-error: true
-        working-directory: tests
+        working-directory: tests/smoke
         timeout-minutes: 1
         run: |
           bundle exec bolt module install
-          bundle exec rake litmus:provision[docker_exp,${IMAGE_TAG}]
+          bundle exec rake litmus:provision[docker,${IMAGE_TAG}]
           bundle exec bolt command run 'last' -t all
 
-      - if: steps.test_image.outcome != 'success'
-        name: Test failure logs
+      - name: Test failure logs
         run: |
-          echo ::group::docker configs
-          cat /etc/docker/* || true
-          echo ::endgroup::
           for x in `docker ps -a --format '{{.ID}}'` ; do
             echo ::group::${x}
             docker logs ${x}
