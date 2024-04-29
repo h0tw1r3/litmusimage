@@ -1,0 +1,75 @@
+---
+name: "Smoke Test"
+
+inputs:
+  provision_task:
+    default: "docker"
+    type: string
+  provision_module:
+    default: ""
+    type: string
+  working_directory:
+    default: "tests/smoke"
+    type: string
+  ruby_version:
+    default: "3.2"
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Ruby
+      uses: "ruby/setup-ruby@v1"
+      with:
+        ruby-version: ${{ inputs.ruby_version }}
+        bundler-cache: true
+        working-directory: ${{ inputs.working_directory }}
+
+    - name: Custom provision module
+      if: inputs.provision_module != ''
+      working-directory: tests/smoke
+      shell: ruby
+      run: |
+        require 'yaml'
+        require 'json'
+        input = <<INPUT
+        ${{ inputs.provision_module }}
+        INPUT
+        override = JSON.parse(input)
+        project = YAML.safe_load_file('bolt-project.yaml')
+        project["modules"].each_with_index do |mod, i|
+          project["modules"][i].merge!(override) if mod["name"].eql?('puppetlabs/provision')
+        end
+        File.write('bolt-project.yaml', project.to_yaml)
+
+    - name: Run
+      id: run
+      continue-on-error: true
+      working-directory: ${{ inputs.working_directory }}
+      timeout-minutes: 4
+      run: |
+        bundle info puppet_litmus
+        echo ::group::bolt module install
+        bundle exec bolt module install
+        bundle exec bolt module show
+        echo ::endgroup::
+        echo ::group::rake listmus:provision
+        bundle exec rake litmus:provision[${{ inputs.provision_task }},${IMAGE_TAG}]
+        echo ::endgroup::
+        echo "testing bolt command"
+        bundle exec bolt command run 'last' -t all
+        echo "testing bolt task"
+        bundle exec bolt task run litmusimage::smoke -t all
+
+    - name: Cleanup
+      if: steps.run.conclusion == 'success'
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        set +e
+        echo ::group::Bolt inventory
+        bundle exec bolt inventory show --detail
+        echo ::endgroup::
+        docker ps -a --format '{{.ID}}' | xargs -n1 docker logs
+        bundle exec rake litmus:tear_down
+        # ALWAYS exit based on the outcode of the smoke test provision
+        exit ${{ steps.run.outcome != 'success' && '1' || '0' }}
